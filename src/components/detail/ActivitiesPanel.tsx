@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Destination } from '@/types';
@@ -6,6 +6,11 @@ import { regionColors } from '@/data/destinations';
 import { Activity, useActivities } from '@/hooks/useActivities';
 import { Restaurant } from '@/hooks/useRestaurants';
 import { useItinerary } from '@/context/ItineraryContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TriangleAlert, MapPin, Utensils, ExternalLink, Check, Plus } from 'lucide-react';
 
 type SortKey = 'rating' | 'reviews';
 
@@ -45,25 +50,25 @@ function StarRating({ rating }: { rating: number }) {
     <span className="flex items-center gap-0.5">
       {Array.from({ length: full  }).map((_, i) => <span key={`f${i}`} className="text-yellow-500 text-[10px]">★</span>)}
       {half && <span className="text-yellow-500/60 text-[10px]">★</span>}
-      {Array.from({ length: empty }).map((_, i) => <span key={`e${i}`} className="text-secondary-text/40 text-[10px]">★</span>)}
+      {Array.from({ length: empty }).map((_, i) => <span key={`e${i}`} className="text-muted-foreground/40 text-[10px]">★</span>)}
     </span>
   );
 }
 
-function Skeleton() {
+function SkeletonList() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-card-bg border border-border-color rounded-xl p-3.5 animate-pulse">
+        <Card key={i} className="p-3.5">
           <div className="flex gap-3">
-            <div className="w-14 h-14 rounded-lg bg-secondary-bg flex-shrink-0" />
+            <Skeleton className="w-14 h-14 rounded-lg flex-shrink-0" />
             <div className="flex-1 space-y-2 pt-1">
-              <div className="h-3 bg-secondary-bg rounded w-3/4" />
-              <div className="h-2.5 bg-secondary-bg rounded w-1/3" />
-              <div className="h-2 bg-secondary-bg rounded w-full" />
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-2.5 w-1/3" />
+              <Skeleton className="h-2 w-full" />
             </div>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );
@@ -89,95 +94,90 @@ export default function ActivitiesPanel({ destination, activities, restaurants, 
   const mapsSearchUrl = `https://www.google.com/maps/search/${encodeURIComponent('restaurants and cafes in ' + destination.city)}`;
 
   return (
-    <div className="flex flex-col h-full bg-primary-bg">
-
+    <div className="flex flex-col h-full bg-background">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         {!hideToggle ? (
-          <div className="flex items-center gap-0.5 bg-secondary-bg border border-border-color rounded-lg p-0.5">
+          <div className="flex items-center gap-0.5 bg-muted/50 border border-border/40 rounded-lg p-0.5">
             <button
               onClick={() => onTabChange('activities')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                tab === 'activities' ? 'bg-card-bg text-primary-text' : 'text-secondary-text hover:text-primary-text'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                tab === 'activities' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Attractions
+              <MapPin className="h-3 w-3" /> Attractions
             </button>
             <button
               onClick={() => onTabChange('restaurants')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                tab === 'restaurants' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'text-secondary-text hover:text-primary-text'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                tab === 'restaurants' ? 'bg-rose-500/10 text-rose-500 shadow-xs' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <span className="text-[11px]">🍽</span>
-              Restaurant/Cafes
+              <Utensils className="h-3 w-3" /> Restaurants
             </button>
           </div>
         ) : (
-          <div className="text-primary-text text-sm font-semibold pl-1">
+          <div className="text-foreground text-sm font-semibold tracking-tight pl-1">
             {tab === 'restaurants' ? 'Restaurants & Cafes' : 'Attractions'}
           </div>
         )}
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <button
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant={sortKey === 'rating' ? 'secondary' : 'ghost'}
+              size="xs"
               onClick={() => setSortKey('rating')}
               title="Sort by rating"
-              className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] transition-colors ${sortKey === 'rating' ? 'text-primary-text font-bold bg-secondary-bg border border-border-color' : 'text-secondary-text hover:text-primary-text'}`}
+              className="h-6 px-1.5 text-[10px]"
             >
-              ★
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <button
+              ★ ↓
+            </Button>
+            <Button
+              variant={sortKey === 'reviews' ? 'secondary' : 'ghost'}
+              size="xs"
               onClick={() => setSortKey('reviews')}
               title="Sort by reviews"
-              className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] transition-colors ${sortKey === 'reviews' ? 'text-primary-text font-bold bg-secondary-bg border border-border-color' : 'text-secondary-text hover:text-primary-text'}`}
+              className="h-6 px-1.5 text-[10px]"
             >
-              #
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+              # ↓
+            </Button>
           </div>
           <a
             href={tab === 'restaurants' ? mapsSearchUrl : viatorUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition-colors"
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
           >
-            {tab === 'restaurants' ? 'Search Google Maps' : 'Book tours'}
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
+            {tab === 'restaurants' ? 'Maps' : 'Book tours'}
+            <ExternalLink className="h-3 w-3" />
           </a>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin pr-0.5 bg-primary-bg">
-        {activeLoading && <Skeleton />}
+      <div className="flex-1 overflow-y-auto scrollbar-thin pr-0.5 bg-background">
+        {activeLoading && <SkeletonList />}
 
         {activeError && (
-          <div className="flex flex-col items-center justify-center h-40 text-center">
-            <p className="text-secondary-text text-xs mb-3">Could not load results</p>
-            <a href={tab === 'restaurants' ? mapsSearchUrl : viatorUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:text-blue-400 transition-colors">
-              {tab === 'restaurants' ? 'Browse Restaurants →' : 'Browse on Viator →'}
-            </a>
+          <div className="flex flex-col items-center justify-center h-40 text-center gap-3">
+            <TriangleAlert className="h-8 w-8 text-muted-foreground/50" />
+            <p className="text-muted-foreground text-xs">Could not load results</p>
+            <Button variant="outline" size="sm" asChild>
+              <a href={tab === 'restaurants' ? mapsSearchUrl : viatorUrl} target="_blank" rel="noopener noreferrer">
+                {tab === 'restaurants' ? 'Browse Restaurants →' : 'Browse on Viator →'}
+              </a>
+            </Button>
           </div>
         )}
 
         {!activeLoading && !activeError && sorted.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-40 text-center">
-            <p className="text-secondary-text text-xs">No results found</p>
+          <div className="flex flex-col items-center justify-center h-40 text-center gap-2">
+            {tab === 'restaurants' ? <Utensils className="h-8 w-8 text-muted-foreground/40" /> : <MapPin className="h-8 w-8 text-muted-foreground/40" />}
+            <p className="text-muted-foreground text-xs">No results found</p>
           </div>
         )}
 
         {!activeLoading && !activeError && sorted.length > 0 && (
-          <div className="space-y-2 bg-primary-bg">
+          <div className="space-y-2">
             {sorted.map((place, i) => {
               const itemId = tab === 'restaurants' ? `restaurant-${place.title}` : `activity-${place.title}`;
               const added = isAdded(itemId);
@@ -187,172 +187,129 @@ export default function ActivitiesPanel({ destination, activities, restaurants, 
               const hasCoords = !!place.gps_coordinates;
 
               return (
-                <div key={place.title + i} className="bg-card-bg hover:bg-secondary-bg/30 border border-border-color rounded-xl p-3.5 transition-all">
-                  <div className="flex gap-3">
-                    <div className="relative flex-shrink-0 w-14 h-14">
-                      {place.thumbnail ? (
-                        <img src={place.thumbnail} alt={place.title} className="w-full h-full rounded-lg object-cover bg-secondary-bg" />
-                      ) : tab === 'restaurants' ? (
-                        <div className="w-full h-full rounded-lg flex items-center justify-center bg-[#e4002b]/10 border border-[#e4002b]/20">
-                          <BibGourmandIcon />
-                        </div>
-                      ) : (
-                        <div className="w-full h-full rounded-lg flex items-center justify-center" style={{ backgroundColor: accentColor + '15', border: `1px solid ${accentColor}25` }} />
-                      )}
-                      {hasCoords && (
-                        <div
-                          className="absolute -top-1.5 -left-1.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white border border-border-color"
-                          style={{
-                            backgroundColor: tab === 'restaurants' ? '#f43f5e' : accentColor,
-                            borderRadius: tab === 'restaurants' ? '3px' : '50%',
-                            transform: tab === 'restaurants' ? 'rotate(45deg)' : undefined,
-                          }}
-                        >
-                          <span style={{ transform: tab === 'restaurants' ? 'rotate(-45deg)' : undefined }}>{i + 1}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-primary-text text-xs font-semibold leading-snug truncate">{place.title}</p>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (added) {
-                                removeItem(itemId);
-                              } else {
-                                addItem({
-                                  id: itemId,
-                                  type: 'activity',
-                                  title: place.title,
-                                  subtitle: destination.city,
-                                  thumbnail: place.thumbnail,
-                                });
-                              }
+                <Card key={place.title + i} className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm overflow-visible">
+                  <CardContent className="p-3.5">
+                    <div className="flex gap-3">
+                      <div className="relative flex-shrink-0 w-14 h-14">
+                        {place.thumbnail ? (
+                          <img src={place.thumbnail} alt={place.title} className="w-full h-full rounded-lg object-cover bg-muted/40" />
+                        ) : tab === 'restaurants' ? (
+                          <div className="w-full h-full rounded-lg flex items-center justify-center bg-rose-500/10 border border-rose-500/20">
+                            <BibGourmandIcon />
+                          </div>
+                        ) : (
+                          <div className="w-full h-full rounded-lg flex items-center justify-center bg-muted/40 border border-border/40" style={{ backgroundColor: accentColor + '10' }} />
+                        )}
+                        {hasCoords && (
+                          <div
+                            className="absolute -top-1.5 -left-1.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white border border-border/20"
+                            style={{
+                              backgroundColor: tab === 'restaurants' ? '#f43f5e' : accentColor,
+                              borderRadius: tab === 'restaurants' ? '3px' : '50%',
+                              transform: tab === 'restaurants' ? 'rotate(45deg)' : undefined,
                             }}
-                            className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
-                              added
-                                ? 'bg-green-500/10 border-green-500/20 text-green-500 font-bold'
-                                : 'bg-card-bg border-border-color text-secondary-text hover:text-primary-text hover:bg-secondary-bg'
-                            }`}
                           >
-                            {added ? '✓ Added' : '+ Add'}
-                          </button>
-                          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-secondary-text hover:text-primary-text transition-colors mt-0.5" title="Open in Google Maps">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        </div>
+                            <span style={{ transform: tab === 'restaurants' ? 'rotate(-45deg)' : undefined }}>{i + 1}</span>
+                          </div>
+                        )}
                       </div>
 
-                      {place.type && <p className="text-secondary-text/80 text-[10px] mt-0.5 truncate">{place.type}</p>}
-
-                      {place.rating && (
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <StarRating rating={place.rating} />
-                          <span className="text-secondary-text text-[10px] font-medium">{place.rating.toFixed(1)}</span>
-                          {place.reviews && (
-                            <span className="text-secondary-text/75 text-[10px]">
-                              ({place.reviews >= 1000 ? `${(place.reviews / 1000).toFixed(0)}k` : place.reviews} reviews)
-                            </span>
-                          )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-foreground text-xs font-semibold leading-snug truncate">{place.title}</p>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              variant={added ? 'secondary' : 'outline'}
+                              size="xs"
+                              className="h-6 text-[10px] px-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (added) {
+                                  removeItem(itemId);
+                                } else {
+                                  addItem({ id: itemId, type: 'activity', title: place.title, subtitle: destination.city, thumbnail: place.thumbnail });
+                                }
+                              }}
+                            >
+                              {added ? <><Check className="h-3 w-3" /> Added</> : <><Plus className="h-3 w-3" /> Add</>}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" title="Open in Google Maps">
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          </div>
                         </div>
-                      )}
 
-                      {place.description && (
-                        <p className="text-secondary-text/85 text-[10px] leading-relaxed mt-1 line-clamp-2">{place.description}</p>
-                      )}
+                        {place.type && <p className="text-muted-foreground/80 text-[10px] mt-0.5 truncate">{place.type}</p>}
 
-                      {/* Recommended Booking/Reservation Platforms Tags */}
-                      {tab === 'activities' && (
-                        <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[8px] text-secondary-text/70 font-bold uppercase tracking-wider">Book on:</span>
-                          <a
-                            href={`https://www.viator.com/searchResults/all?text=${encodeURIComponent(place.title + ', ' + destination.city)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-1.5 py-0.5 rounded bg-secondary-bg hover:bg-accent-color border border-border-color text-secondary-text hover:text-white transition-colors text-[9px] font-bold"
-                          >
-                            Viator
-                          </a>
-                          <a
-                            href={`https://www.klook.com/en-IN/search?query=${encodeURIComponent(place.title + ' ' + destination.city)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-1.5 py-0.5 rounded bg-secondary-bg hover:bg-accent-color border border-border-color text-secondary-text hover:text-white transition-colors text-[9px] font-bold"
-                          >
-                            Klook
-                          </a>
-                          <a
-                            href={`https://www.getyourguide.com/s?q=${encodeURIComponent(place.title + ' ' + destination.city)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-1.5 py-0.5 rounded bg-secondary-bg hover:bg-accent-color border border-border-color text-secondary-text hover:text-white transition-colors text-[9px] font-bold"
-                          >
-                            GYG
-                          </a>
-                        </div>
-                      )}
+                        {place.rating && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <StarRating rating={place.rating} />
+                            <span className="text-muted-foreground text-[10px] font-medium">{place.rating.toFixed(1)}</span>
+                            {place.reviews && (
+                              <span className="text-muted-foreground/75 text-[10px]">
+                                ({place.reviews >= 1000 ? `${(place.reviews / 1000).toFixed(0)}k` : place.reviews} reviews)
+                              </span>
+                            )}
+                          </div>
+                        )}
 
-                      {tab === 'restaurants' && (
-                        <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[8px] text-secondary-text/70 font-bold uppercase tracking-wider">Reserve:</span>
-                          <a
-                            href={`https://www.google.com/maps/search/${encodeURIComponent(place.title + ' ' + destination.city)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-1.5 py-0.5 rounded bg-secondary-bg hover:bg-accent-color border border-border-color text-secondary-text hover:text-white transition-colors text-[9px] font-bold"
-                          >
-                            Maps
-                          </a>
-                          <a
-                            href={`https://www.thefork.com/search?text=${encodeURIComponent(place.title + ' ' + destination.city)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-1.5 py-0.5 rounded bg-secondary-bg hover:bg-accent-color border border-border-color text-secondary-text hover:text-white transition-colors text-[9px] font-bold"
-                          >
-                            TheFork
-                          </a>
-                          <a
-                            href={`https://www.tripadvisor.com/Search?q=${encodeURIComponent(place.title + ' ' + destination.city)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-1.5 py-0.5 rounded bg-secondary-bg hover:bg-accent-color border border-border-color text-secondary-text hover:text-white transition-colors text-[9px] font-bold"
-                          >
-                            TripAdvisor
-                          </a>
-                        </div>
-                      )}
+                        {place.description && (
+                          <p className="text-muted-foreground/85 text-[10px] leading-relaxed mt-1 line-clamp-2">{place.description}</p>
+                        )}
+
+                        {tab === 'activities' && (
+                          <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[8px] text-muted-foreground/70 font-bold uppercase tracking-wider">Book on:</span>
+                            {[
+                              { name: 'Viator', href: `https://www.viator.com/searchResults/all?text=${encodeURIComponent(place.title + ', ' + destination.city)}` },
+                              { name: 'Klook', href: `https://www.klook.com/en-IN/search?query=${encodeURIComponent(place.title + ' ' + destination.city)}` },
+                              { name: 'GYG', href: `https://www.getyourguide.com/s?q=${encodeURIComponent(place.title + ' ' + destination.city)}` },
+                            ].map(p => (
+                              <a key={p.name} href={p.href} target="_blank" rel="noopener noreferrer">
+                                <Badge variant="outline" className="text-[9px] px-1.5 h-4 cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors">{p.name}</Badge>
+                              </a>
+                            ))}
+                          </div>
+                        )}
+
+                        {tab === 'restaurants' && (
+                          <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[8px] text-muted-foreground/70 font-bold uppercase tracking-wider">Reserve:</span>
+                            {[
+                              { name: 'Maps', href: `https://www.google.com/maps/search/${encodeURIComponent(place.title + ' ' + destination.city)}` },
+                              { name: 'TheFork', href: `https://www.thefork.com/search?text=${encodeURIComponent(place.title + ' ' + destination.city)}` },
+                              { name: 'TripAdvisor', href: `https://www.tripadvisor.com/Search?q=${encodeURIComponent(place.title + ' ' + destination.city)}` },
+                            ].map(p => (
+                              <a key={p.name} href={p.href} target="_blank" rel="noopener noreferrer">
+                                <Badge variant="outline" className="text-[9px] px-1.5 h-4 cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors">{p.name}</Badge>
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         )}
       </div>
 
-      <div className="flex-shrink-0 pt-3 mt-1 border-t border-border-color flex items-center justify-between">
+      <div className="flex-shrink-0 pt-3 mt-1 border-t border-border/40 flex items-center justify-between">
         {tab === 'restaurants' ? (
-          <a href={mapsSearchUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-secondary-text hover:text-primary-text transition-colors flex items-center gap-1">
-            Restaurants & Cafes in {destination.city}
+          <a href={mapsSearchUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            Restaurants in {destination.city}
           </a>
         ) : (
-          <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(destination.city)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-secondary-text hover:text-primary-text transition-colors flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+          <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(destination.city)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
             {destination.city} on Wikipedia
           </a>
         )}
-        <a href={`https://www.tripadvisor.com/Search?q=${encodeURIComponent(destination.city)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-secondary-text hover:text-primary-text transition-colors flex items-center gap-1">
-          TripAdvisor
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
+        <a href={`https://www.tripadvisor.com/Search?q=${encodeURIComponent(destination.city)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+          TripAdvisor <ExternalLink className="h-3 w-3" />
         </a>
       </div>
     </div>

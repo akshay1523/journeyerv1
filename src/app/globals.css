@@ -2,37 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
+/* -- shadcn/ui CSS Variables (Dark mode default = Zinc palette) ------- */
 :root {
-  /* Default: Dark Mode */
-  --background: #0a0a0f;
-  --foreground: #f9fafb;
-  
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 96%;
+  --card: 240 8% 6%;
+  --card-foreground: 0 0% 96%;
+  --popover: 240 10% 5%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 11%;
+  --secondary-foreground: 0 0% 85%;
+  --muted: 240 4% 11%;
+  --muted-foreground: 240 5% 55%;
+  --accent: 240 4% 14%;
+  --accent-foreground: 0 0% 96%;
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 4% 14%;
+  --input: 240 4% 14%;
+  --ring: 217 91% 60%;
+  --radius: 0.75rem;
+
+  /* Legacy custom tokens */
   --bg-primary: #0a0a0f;
   --bg-secondary: #0e0e15;
   --bg-card: rgba(255, 255, 255, 0.03);
-  --text-primary: #f9fafb;
+  --text-primary: #f0f0f5;
   --text-secondary: #9ca3af;
   --border-color: rgba(255, 255, 255, 0.08);
   --accent-color: #3b82f6;
 }
 
+/* -- Light Mode ------------------------------------------------------- */
 html.light {
-  /* Light Mode */
-  --background: #F8F9FA;
-  --foreground: #1A1A24;
-  
+  --background: 0 0% 98%;
+  --foreground: 240 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 10%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 94%;
+  --secondary-foreground: 240 6% 20%;
+  --muted: 240 5% 94%;
+  --muted-foreground: 240 4% 42%;
+  --accent: 240 5% 92%;
+  --accent-foreground: 240 6% 15%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 6% 88%;
+  --input: 240 6% 88%;
+  --ring: 221 83% 53%;
+
+  /* Legacy custom tokens */
   --bg-primary: #F8F9FA;
   --bg-secondary: #F1F3F5;
-  --bg-card: rgba(0, 0, 0, 0.03);
+  --bg-card: rgba(0, 0, 0, 0.02);
   --text-primary: #1A1A24;
   --text-secondary: #4A4A5A;
-  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color: rgba(0, 0, 0, 0.07);
   --accent-color: #2563eb;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* -- Base resets ------------------------------------------------------- */
+* { box-sizing: border-box; }
 
 html, body {
   margin: 0;
@@ -41,56 +77,33 @@ html, body {
   overflow: hidden;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Smooth transition for theme swaps without interfering with Leaflet positioning */
-body, 
-.bg-primary-bg, 
-.bg-secondary-bg, 
-.bg-card-bg, 
-.text-primary-text, 
-.text-secondary-text, 
-.border-border-color,
-.border-r,
-.border-b,
-.border-t,
-.border,
-header,
-button,
-h1, h2, h3, h4, h5, h6,
-p,
-span,
-input,
-select {
-  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease, fill 300ms ease;
+/* -- Smooth theme transitions ------------------------------------------- */
+body,
+.bg-primary-bg, .bg-secondary-bg, .bg-card-bg,
+.text-primary-text, .text-secondary-text,
+.border-border-color, .border-r, .border-b, .border-t, .border,
+header, button, h1, h2, h3, h4, h5, h6, p, span, input, select {
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease;
 }
 
-/* Scrollbar styling */
+/* -- Scrollbar styling -------------------------------------------------- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
+  scrollbar-color: hsl(var(--border)) transparent;
 }
-*::-webkit-scrollbar {
-  width: 4px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-*::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 2px;
-}
-*::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-color);
-}
+*::-webkit-scrollbar { width: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
+*::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary)); }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
+  .text-balance { text-wrap: balance; }
+  .scrollbar-thin { scrollbar-width: thin; }
+  /* Frosted glass helper */
+  .glass { backdrop-blur: 12px; background: hsl(var(--background) / 0.8); }
 }

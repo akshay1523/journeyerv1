@@ -1,7 +1,10 @@
-'use client';
+﻿'use client';
 
 import { FlightOffer } from '@/types';
 import FlightCard from './FlightCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
+import { AlertCircle, PlaneTakeoff } from 'lucide-react';
 
 interface Props {
   flights: FlightOffer[];
@@ -13,36 +16,40 @@ interface Props {
 
 function SkeletonCard() {
   return (
-    <div className="bg-card-bg border border-border-color rounded-xl p-4 animate-pulse">
+    <Card className="p-4">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex gap-2 mb-3">
-            <div className="h-4 w-8 bg-secondary-bg rounded" />
-            <div className="h-4 w-24 bg-secondary-bg rounded" />
+        <div className="flex-1 space-y-3">
+          <div className="flex gap-2">
+            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-16 ml-auto" />
           </div>
           <div className="flex items-center gap-3">
-            <div className="h-7 w-12 bg-secondary-bg rounded" />
-            <div className="flex-1 h-3 bg-secondary-bg rounded" />
-            <div className="h-7 w-12 bg-secondary-bg rounded" />
+            <Skeleton className="h-7 w-12" />
+            <Skeleton className="flex-1 h-3" />
+            <Skeleton className="h-7 w-12" />
           </div>
         </div>
-        <div className="h-8 w-16 bg-secondary-bg rounded" />
+        <Skeleton className="h-10 w-20" />
       </div>
-    </div>
+      <Skeleton className="h-[1px] w-full mt-3 mb-2" />
+      <div className="flex justify-between">
+        <Skeleton className="h-5 w-20" />
+        <Skeleton className="h-5 w-32" />
+      </div>
+    </Card>
   );
 }
 
 export default function FlightResults({ flights, isLoading, error, origin, destination }: Props) {
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-40 text-center px-4">
-        <div className="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-3">
-          <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      <div className="flex flex-col items-center justify-center h-40 text-center px-4 gap-3">
+        <div className="w-10 h-10 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center">
+          <AlertCircle className="h-5 w-5 text-destructive" />
         </div>
-        <p className="text-rose-500 text-sm font-medium">Unable to load flights</p>
-        <p className="text-secondary-text text-xs mt-1">{error}</p>
+        <p className="text-destructive text-sm font-medium">Unable to load flights</p>
+        <p className="text-muted-foreground text-xs">{error}</p>
       </div>
     );
   }
@@ -60,21 +67,19 @@ export default function FlightResults({ flights, isLoading, error, origin, desti
 
   if (flights.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-40 text-center px-4">
-        <div className="w-10 h-10 rounded-full bg-card-bg border border-border-color flex items-center justify-center mb-3">
-          <svg className="w-5 h-5 text-secondary-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      <div className="flex flex-col items-center justify-center h-40 text-center px-4 gap-3">
+        <div className="w-10 h-10 rounded-full bg-muted/60 border border-border/40 flex items-center justify-center">
+          <PlaneTakeoff className="h-5 w-5 text-muted-foreground" />
         </div>
-        <p className="text-secondary-text text-sm">No flights found</p>
-        <p className="text-secondary-text/80 text-xs mt-1">{origin} → {destination}</p>
+        <p className="text-muted-foreground text-sm">No flights found</p>
+        <p className="text-muted-foreground/70 text-xs">{origin} → {destination}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-secondary-text text-xs pb-1">
+      <p className="text-muted-foreground text-xs pb-1">
         {flights.length} flight{flights.length !== 1 ? 's' : ''} found · sorted by price
       </p>
       {flights.map((offer, i) => (

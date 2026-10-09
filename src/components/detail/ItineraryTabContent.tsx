@@ -1,9 +1,13 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Destination, DateRange } from '@/types';
-import { useItinerary, ItineraryItem } from '@/context/ItineraryContext';
+import { useItinerary } from '@/context/ItineraryContext';
 import { format, differenceInDays } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, ListTodo, Trash2, X, Sparkles, RefreshCw } from 'lucide-react';
 
 interface Props {
   destination: Destination;
@@ -34,7 +38,6 @@ export default function ItineraryTabContent({ destination, dates }: Props) {
 
   const durationDays = differenceInDays(dates.returnDate, dates.departure) + 1;
 
-  // Group items by type
   const flights = items.filter((i) => i.type === 'flight');
   const hotels = items.filter((i) => i.type === 'hotel');
   const attractions = items.filter((i) => i.type === 'activity' && i.id.startsWith('activity-'));
@@ -46,30 +49,19 @@ export default function ItineraryTabContent({ destination, dates }: Props) {
     try {
       const res = await fetch('/api/generate-itinerary', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           destination: destination.city,
           departureDate: format(dates.departure, 'yyyy-MM-dd'),
           returnDate: format(dates.returnDate, 'yyyy-MM-dd'),
           duration: durationDays,
           travelers,
-          items: items.map((i) => ({
-            id: i.id,
-            type: i.type,
-            title: i.title,
-            subtitle: i.subtitle,
-            price: i.price,
-          })),
+          items: items.map((i) => ({ id: i.id, type: i.type, title: i.title, subtitle: i.subtitle, price: i.price })),
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error ?? 'Failed to generate itinerary');
-      }
-
+      if (!res.ok) throw new Error(json.error ?? 'Failed to generate itinerary');
       setItinerary(json.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -80,256 +72,161 @@ export default function ItineraryTabContent({ destination, dates }: Props) {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'flight':
-        return '✈️';
-      case 'hotel':
-        return '🏨';
-      case 'activity':
-        return '📍';
-      case 'restaurant':
-        return '🍽';
-      default:
-        return '💡';
+      case 'flight': return '✈️';
+      case 'hotel': return '🏨';
+      case 'activity': return '📍';
+      case 'restaurant': return '🍽';
+      default: return '💡';
     }
   };
 
+  const groupSections = [
+    { label: 'Flights', items: flights, emoji: '✈️' },
+    { label: 'Hotels', items: hotels, emoji: '🏨' },
+    { label: 'Attractions', items: attractions, emoji: '📍' },
+    { label: 'Restaurants & Cafes', items: restaurants, emoji: '🍽' },
+  ].filter(g => g.items.length > 0);
+
   return (
     <div className="space-y-6">
-      {/* Grouped Added Items List */}
+      {/* Selected Trip Elements */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-primary-text text-sm font-semibold">Selected Trip Elements</h3>
+          <h3 className="text-foreground text-sm font-semibold tracking-tight">Selected Trip Elements</h3>
           {items.length > 0 && (
-            <button
-              onClick={clearAll}
-              className="text-xs text-rose-500 hover:text-rose-600 transition-colors border border-rose-500/20 px-2.5 py-1 rounded-lg bg-rose-500/10 font-bold"
-            >
-              Clear All
-            </button>
+            <Button variant="destructive" size="xs" onClick={clearAll} className="h-6 text-[10px]">
+              <Trash2 className="h-3 w-3" /> Clear All
+            </Button>
           )}
         </div>
 
         {items.length === 0 ? (
-          <div className="text-center py-8 bg-card-bg border border-border-color rounded-xl px-4">
-            <p className="text-secondary-text text-xs">Your itinerary list is empty.</p>
-            <p className="text-secondary-text/80 text-[10px] mt-1">
-              Go to Flights, Hotels, Attractions, or Restaurants and click "+ Add" to build your trip.
-            </p>
+          <div className="flex flex-col items-center gap-3 py-10 text-center border border-dashed border-border/40 rounded-xl">
+            <ListTodo className="h-10 w-10 text-muted-foreground/40" />
+            <p className="text-muted-foreground text-xs">Your itinerary is empty</p>
+            <p className="text-muted-foreground/60 text-[10px]">Add items from Flights, Hotels, Attractions, or Restaurants</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Flights */}
-            {flights.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-secondary-text text-xs font-medium pl-1">Flights ({flights.length})</h4>
-                <div className="grid gap-2">
-                  {flights.map((item) => (
-                    <div key={item.id} className="bg-card-bg border border-border-color rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-sm">✈️</span>
-                        <div>
-                          <p className="text-primary-text font-semibold">{item.title}</p>
-                          <p className="text-secondary-text text-[10px]">{item.subtitle}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-accent-color font-bold">{item.price}</span>
-                        <button onClick={() => removeItem(item.id)} className="text-secondary-text hover:text-rose-500 transition-colors font-bold">✕</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Hotels */}
-            {hotels.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-secondary-text text-xs font-medium pl-1">Hotels ({hotels.length})</h4>
-                <div className="grid gap-2">
-                  {hotels.map((item) => (
-                    <div key={item.id} className="bg-card-bg border border-border-color rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs">
+          <div className="space-y-3">
+            {groupSections.map((group) => (
+              <Card key={group.label} className="overflow-hidden">
+                <CardHeader className="py-2.5 px-4 bg-muted/30">
+                  <CardTitle className="text-xs text-muted-foreground font-medium">
+                    {group.emoji} {group.label} ({group.items.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 divide-y divide-border/40">
+                  {group.items.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between px-4 py-3 text-xs hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
                         {item.thumbnail ? (
                           <img src={item.thumbnail} alt={item.title} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                         ) : (
-                          <span className="text-sm flex-shrink-0">🏨</span>
+                          <span className="text-sm flex-shrink-0">{getIcon(item.type)}</span>
                         )}
                         <div className="min-w-0">
-                          <p className="text-primary-text font-semibold truncate">{item.title}</p>
-                          <p className="text-secondary-text text-[10px]">{item.subtitle}</p>
+                          <p className="text-foreground font-semibold truncate">{item.title}</p>
+                          <p className="text-muted-foreground text-[10px]">{item.subtitle}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
-                        <span className="text-accent-color font-bold">{item.price}</span>
-                        <button onClick={() => removeItem(item.id)} className="text-secondary-text hover:text-rose-500 transition-colors font-bold">✕</button>
+                        {item.price && <span className="text-primary font-bold">{item.price}</span>}
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* Attractions */}
-            {attractions.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-secondary-text text-xs font-medium pl-1">Attractions ({attractions.length})</h4>
-                <div className="grid gap-2">
-                  {attractions.map((item) => (
-                    <div key={item.id} className="bg-card-bg border border-border-color rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {item.thumbnail ? (
-                          <img src={item.thumbnail} alt={item.title} className="w-8 h-8 rounded object-cover flex-shrink-0" />
-                        ) : (
-                          <span className="text-sm flex-shrink-0">📍</span>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-primary-text font-semibold truncate">{item.title}</p>
-                          <p className="text-secondary-text text-[10px]">{item.subtitle}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => removeItem(item.id)} className="text-secondary-text hover:text-rose-500 transition-colors flex-shrink-0 font-bold">✕</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Restaurants */}
-            {restaurants.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-secondary-text text-xs font-medium pl-1">Restaurants & Cafes ({restaurants.length})</h4>
-                <div className="grid gap-2">
-                  {restaurants.map((item) => (
-                    <div key={item.id} className="bg-card-bg border border-border-color rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {item.thumbnail ? (
-                          <img src={item.thumbnail} alt={item.title} className="w-8 h-8 rounded object-cover flex-shrink-0" />
-                        ) : (
-                          <span className="text-sm flex-shrink-0">🍽</span>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-primary-text font-semibold truncate">{item.title}</p>
-                          <p className="text-secondary-text text-[10px]">{item.subtitle}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => removeItem(item.id)} className="text-secondary-text hover:text-rose-500 transition-colors flex-shrink-0 font-bold">✕</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
 
       {/* AI Generator Panel */}
-      <div className="border-t border-border-color pt-5">
-        <div className="bg-accent-color/5 border border-accent-color/20 rounded-2xl p-4 space-y-4">
+      <div className="border-t border-border/40 pt-5">
+        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-primary-text text-xs font-bold flex items-center gap-1.5">
-                <span>✨</span> AI Itinerary Generator
+              <h4 className="text-foreground text-xs font-bold flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> AI Itinerary Generator
               </h4>
-              <p className="text-secondary-text text-[10px] mt-0.5">
-                Generate a smart day-wise plan for {durationDays} days.
-              </p>
+              <p className="text-muted-foreground text-[10px] mt-0.5">Generate a smart day-wise plan for {durationDays} days.</p>
             </div>
-            
-            {/* Travelers Selector */}
-            <div className="flex items-center gap-2 bg-card-bg border border-border-color rounded-xl px-2.5 py-1">
-              <span className="text-[10px] text-secondary-text">Travellers:</span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setTravelers(Math.max(1, travelers - 1))}
-                  className="text-xs text-secondary-text hover:text-primary-text px-1 font-bold"
-                >
-                  -
-                </button>
-                <span className="text-xs text-primary-text font-bold w-4 text-center">{travelers}</span>
-                <button
-                  onClick={() => setTravelers(Math.min(10, travelers + 1))}
-                  className="text-xs text-secondary-text hover:text-primary-text px-1 font-bold"
-                >
-                  +
-                </button>
+            <div className="flex items-center gap-2 bg-background/60 border border-border/40 rounded-xl px-2.5 py-1">
+              <span className="text-[10px] text-muted-foreground">Travellers:</span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setTravelers(Math.max(1, travelers - 1))}>
+                  <span className="text-xs font-bold">-</span>
+                </Button>
+                <span className="text-xs text-foreground font-bold w-4 text-center">{travelers}</span>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setTravelers(Math.min(10, travelers + 1))}>
+                  <span className="text-xs font-bold">+</span>
+                </Button>
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[11px] rounded-xl p-3">
-              <p className="font-semibold">Generation Failed</p>
-              <p className="text-rose-500/80 mt-0.5">{error}</p>
+            <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 text-destructive text-[11px] rounded-xl p-3">
+              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Generation Failed</p>
+                <p className="text-destructive/80 mt-0.5">{error}</p>
+              </div>
             </div>
           )}
 
           {loading ? (
             <div className="py-8 flex flex-col items-center justify-center text-center">
-              <div className="w-6 h-6 border-2 border-accent-color/30 border-t-accent-color rounded-full animate-spin mb-3" />
-              <p className="text-primary-text text-xs font-semibold">Gemini is building your travel plan...</p>
-              <p className="text-secondary-text text-[10px] mt-1 max-w-[200px]">
-                Organizing flights, hotels, and matching attraction schedules.
-              </p>
+              <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
+              <p className="text-foreground text-xs font-semibold">Gemini is building your travel plan...</p>
+              <p className="text-muted-foreground text-[10px] mt-1 max-w-[200px]">Organizing flights, hotels, and matching attraction schedules.</p>
             </div>
           ) : itinerary ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-border-color/40 pb-2">
-                <span className="text-[10px] text-green-500 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  Itinerary generated successfully
+              <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Itinerary generated
                 </span>
-                <button
-                  onClick={handleGenerate}
-                  className="text-xs text-accent-color hover:text-accent-color/80 font-semibold transition-colors flex items-center gap-1"
-                >
-                  <span>🔄</span> Regenerate
-                </button>
+                <Button variant="ghost" size="sm" onClick={handleGenerate} className="h-6 text-xs text-primary">
+                  <RefreshCw className="h-3 w-3" /> Regenerate
+                </Button>
               </div>
-
-              {/* Day-by-Day Timeline Render */}
               <div className="space-y-5">
                 {itinerary.map((day) => (
-                  <div key={day.day} className="relative pl-4 border-l border-border-color/30 last:border-0 pb-1">
-                    {/* Day Marker */}
-                    <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-accent-color border border-primary-bg" />
-                    
+                  <div key={day.day} className="relative pl-4 border-l border-border/30 last:border-0 pb-1">
+                    <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary border border-background" />
                     <div className="mb-2.5">
-                      <span className="text-accent-color text-xs font-extrabold uppercase tracking-wider">
-                        Day {day.day}
-                      </span>
-                      <span className="text-secondary-text text-[10px] mx-1.5">|</span>
-                      <span className="text-secondary-text text-[10px] font-medium">
+                      <span className="text-primary text-xs font-extrabold uppercase tracking-wider">Day {day.day}</span>
+                      <span className="text-muted-foreground text-[10px] mx-1.5">|</span>
+                      <span className="text-muted-foreground text-[10px] font-medium">
                         {day.date ? format(new Date(day.date), 'EEE, MMM d') : ''}
                       </span>
-                      <h4 className="text-primary-text text-xs font-bold mt-0.5">{day.theme}</h4>
+                      <h4 className="text-foreground text-xs font-bold mt-0.5">{day.theme}</h4>
                     </div>
-
                     <div className="space-y-2">
                       {day.activities.map((act, idx) => (
                         <div
                           key={idx}
                           className={`rounded-xl p-3 border text-xs ${
                             act.type === 'recommendation'
-                              ? 'bg-yellow-500/5 border-yellow-500/20'
-                              : 'bg-card-bg border-border-color'
+                              ? 'bg-amber-500/5 border-amber-500/20'
+                              : 'bg-card border-border/60'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm" title={act.type}>{getIcon(act.type)}</span>
-                              <span className="text-[10px] font-semibold text-secondary-text bg-secondary-bg border border-border-color/40 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                {act.time}
-                              </span>
+                              <span className="text-sm">{getIcon(act.type)}</span>
+                              <Badge variant="secondary" className="text-[9px] px-1.5 uppercase tracking-wider">{act.time}</Badge>
                             </div>
                             {act.type === 'recommendation' && (
-                              <span className="text-[9px] bg-yellow-500/10 text-yellow-600 border border-yellow-500/20 px-1.5 py-0.2 rounded-full font-bold uppercase">
-                                Recommended
-                              </span>
+                              <Badge variant="warning" className="text-[9px]">Recommended</Badge>
                             )}
                           </div>
-                          <p className="text-primary-text font-semibold mt-1.5">{act.title}</p>
-                          <p className="text-secondary-text text-[10px] leading-relaxed mt-1">{act.description}</p>
+                          <p className="text-foreground font-semibold mt-1.5">{act.title}</p>
+                          <p className="text-muted-foreground text-[10px] leading-relaxed mt-1">{act.description}</p>
                         </div>
                       ))}
                     </div>
@@ -338,13 +235,13 @@ export default function ItineraryTabContent({ destination, dates }: Props) {
               </div>
             </div>
           ) : (
-            <button
+            <Button
               onClick={handleGenerate}
               disabled={items.length === 0}
-              className="w-full py-2.5 bg-accent-color hover:bg-accent-color/90 disabled:opacity-30 disabled:hover:bg-accent-color disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+              className="w-full"
             >
-              <span>✨</span> Generate AI Itinerary
-            </button>
+              <Sparkles className="h-4 w-4" /> Generate AI Itinerary
+            </Button>
           )}
         </div>
       </div>

@@ -1,10 +1,13 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { DayPicker, DateRange as DPDateRange } from 'react-day-picker';
 import { format, addDays } from 'date-fns';
 import { Destination, DateRange } from '@/types';
 import { regionColors } from '@/data/destinations';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import 'react-day-picker/style.css';
 
 interface Props {
@@ -18,19 +21,12 @@ const minDate = addDays(today, 3);
 
 export default function DateRangePicker({ destination, onConfirm, onBack }: Props) {
   const [range, setRange] = useState<DPDateRange | undefined>(undefined);
-  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Escape key closes calendar
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onBack(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onBack]);
-
-  // Click outside closes calendar
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (cardRef.current && !cardRef.current.contains(e.target as Node)) onBack();
-  };
 
   const canConfirm =
     range?.from &&
@@ -47,30 +43,22 @@ export default function DateRangePicker({ destination, onConfirm, onBack }: Prop
   const accentColor = regionColors[destination.region] ?? '#60a5fa';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleBackdropClick}>
-      <div ref={cardRef} className="bg-secondary-bg border border-border-color rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onBack(); }}>
+      <DialogContent className="max-w-md p-0 overflow-hidden">
         {/* Destination header */}
-        <div className="px-6 pt-6 pb-4 border-b border-border-color/40">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-secondary-text hover:text-primary-text text-xs mb-4 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+        <div className="px-6 pt-6 pb-4 border-b border-border/40">
+          <Button variant="ghost" size="sm" onClick={onBack} className="mb-4 -ml-2 text-muted-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" />
             Back to globe
-          </button>
+          </Button>
           <div className="flex items-center gap-3">
-            <div
-              className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{ backgroundColor: accentColor }}
-            />
+            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
             <div>
-              <h2 className="text-primary-text text-lg font-semibold leading-tight">{destination.city}</h2>
-              <p className="text-secondary-text text-sm">{destination.country}</p>
+              <h2 className="text-foreground text-lg font-semibold tracking-tight leading-tight">{destination.city}</h2>
+              <p className="text-muted-foreground text-sm">{destination.country}</p>
             </div>
           </div>
-          <p className="text-secondary-text/80 text-xs mt-3">Select your travel dates</p>
+          <p className="text-muted-foreground/80 text-xs mt-3">Select your travel dates</p>
         </div>
 
         {/* Calendar */}
@@ -78,9 +66,7 @@ export default function DateRangePicker({ destination, onConfirm, onBack }: Prop
           <style>{`
             .rdp {
               --rdp-accent-color: ${accentColor};
-              --rdp-background-color: var(--bg-card);
-              --rdp-accent-color-dark: ${accentColor};
-              --rdp-background-color-dark: var(--bg-card);
+              --rdp-background-color: hsl(var(--muted));
               margin: 0;
             }
             .rdp-day_selected, .rdp-day_range_start, .rdp-day_range_end {
@@ -89,16 +75,16 @@ export default function DateRangePicker({ destination, onConfirm, onBack }: Prop
             }
             .rdp-day_range_middle {
               background-color: ${accentColor}22 !important;
-              color: var(--text-primary) !important;
+              color: hsl(var(--foreground)) !important;
             }
-            .rdp-day { color: var(--text-primary); }
+            .rdp-day { color: hsl(var(--foreground)); }
             .rdp-day:hover:not([disabled]):not(.rdp-day_selected) {
-              background-color: var(--bg-card) !important;
+              background-color: hsl(var(--muted)) !important;
             }
-            .rdp-head_cell { color: var(--text-secondary); font-size: 0.7rem; }
-            .rdp-caption_label { color: var(--text-primary); font-weight: 600; }
-            .rdp-nav_button { color: var(--text-secondary); }
-            .rdp-day_disabled { opacity: 0.25; color: var(--text-secondary) !important; }
+            .rdp-head_cell { color: hsl(var(--muted-foreground)); font-size: 0.7rem; }
+            .rdp-caption_label { color: hsl(var(--foreground)); font-weight: 600; }
+            .rdp-nav_button { color: hsl(var(--muted-foreground)); }
+            .rdp-day_disabled { opacity: 0.25; color: hsl(var(--muted-foreground)) !important; }
           `}</style>
           <DayPicker
             mode="range"
@@ -111,35 +97,31 @@ export default function DateRangePicker({ destination, onConfirm, onBack }: Prop
         </div>
 
         {/* Date summary */}
-        <div className="px-6 pb-4">
+        <div className="px-6 pb-6">
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-card-bg border border-border-color rounded-lg px-3 py-2.5">
-              <p className="text-secondary-text text-xs mb-0.5">Departure</p>
-              <p className="text-primary-text text-sm font-medium">
+            <div className="bg-muted/40 border border-border/60 rounded-lg px-3 py-2.5">
+              <p className="text-muted-foreground text-xs mb-0.5">Departure</p>
+              <p className="text-foreground text-sm font-medium">
                 {range?.from ? format(range.from, 'MMM d, yyyy') : '—'}
               </p>
             </div>
-            <div className="bg-card-bg border border-border-color rounded-lg px-3 py-2.5">
-              <p className="text-secondary-text text-xs mb-0.5">Return</p>
-              <p className="text-primary-text text-sm font-medium">
+            <div className="bg-muted/40 border border-border/60 rounded-lg px-3 py-2.5">
+              <p className="text-muted-foreground text-xs mb-0.5">Return</p>
+              <p className="text-foreground text-sm font-medium">
                 {range?.to ? format(range.to, 'MMM d, yyyy') : '—'}
               </p>
             </div>
           </div>
-          <button
+          <Button
             onClick={handleConfirm}
             disabled={!canConfirm}
-            className="w-full py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: canConfirm ? accentColor : 'var(--bg-card)',
-              color: canConfirm ? 'white' : 'var(--text-secondary)',
-              border: '1px solid var(--border-color)',
-            }}
+            className="w-full h-11 text-sm font-semibold"
+            style={canConfirm ? { backgroundColor: accentColor } : undefined}
           >
             Search Flights →
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

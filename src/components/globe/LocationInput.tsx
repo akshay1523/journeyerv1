@@ -1,7 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { LatLng } from '@/types';
+import { Input } from '@/components/ui/input';
+import { MapPin } from 'lucide-react';
 
 export const INDIA_CITIES: Array<{ label: string; iata: string; coords: LatLng }> = [
   { label: 'Delhi (DEL)', iata: 'DEL', coords: { lat: 28.5665, lng: 77.1031 } },
@@ -54,37 +56,31 @@ export default function LocationInput({ onOriginSet, currentIata, inline = false
   }, []);
 
   return (
-    <div
-      data-location-input
-      className={inline ? "w-full relative" : "absolute bottom-8 left-8 z-20 w-72"}
-    >
+    <div data-location-input className={inline ? 'w-full relative' : 'absolute bottom-8 left-8 z-20 w-72'}>
       {!inline && (
-        <p className="text-xs text-secondary-text mb-1.5 font-medium tracking-widest uppercase">
+        <p className="text-[10px] text-muted-foreground mb-1.5 font-semibold tracking-widest uppercase">
           Departing From
         </p>
       )}
       <div className="relative">
-        <input
+        <Input
           ref={inputRef}
           type="text"
           value={open ? query : (selectedCity?.label ?? '')}
           placeholder="Select your city..."
           onFocus={() => { setOpen(true); setQuery(''); }}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-secondary-bg border border-border-color rounded-xl pl-4 pr-10 py-2 text-primary-text placeholder-secondary-text text-xs focus:outline-none focus:border-accent-color/50 transition-all font-semibold"
+          className="pl-3 pr-9 h-9 text-xs font-semibold bg-background/60"
         />
-        <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+        <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
       </div>
       {open && (
-        <div className={`absolute z-30 w-full bg-secondary-bg border border-border-color rounded-xl overflow-hidden shadow-2xl max-h-48 overflow-y-auto ${inline ? 'top-full mt-1.5' : 'bottom-full mb-1.5'}`}>
+        <div className={`absolute z-30 w-full bg-popover border border-border/60 rounded-xl overflow-hidden shadow-xl max-h-48 overflow-y-auto ${inline ? 'top-full mt-1.5' : 'bottom-full mb-1.5'}`}>
           {filtered.map((city) => (
             <button
               key={city.iata}
               type="button"
-              className="w-full text-left px-4 py-2 text-xs text-primary-text hover:bg-card-bg hover:text-accent-color transition-colors font-medium"
+              className="w-full text-left px-4 py-2 text-xs text-foreground hover:bg-muted/60 hover:text-primary transition-colors font-medium"
               onMouseDown={() => {
                 onOriginSet(city.iata, city.coords);
                 setOpen(false);

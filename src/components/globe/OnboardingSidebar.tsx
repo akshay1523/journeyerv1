@@ -1,10 +1,15 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { COUNTRIES_DATA } from '@/data/countries';
 import { getAllDestinations } from '@/data/destinations';
 import { Destination, LatLng } from '@/types';
 import LocationInput, { INDIA_CITIES } from './LocationInput';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Props {
   onSelectDestination: (dest: Destination, onboardingData: { days: number; month: string }) => void;
@@ -14,9 +19,8 @@ interface Props {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-// Haversine distance formula to calculate distance between two coordinates
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Earth radius in km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a =
@@ -31,7 +35,7 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 
 export default function OnboardingSidebar({ onSelectDestination, onOriginSet, originIata }: Props) {
   const [days, setDays] = useState<number>(7);
-  const [budgetInput, setBudgetInput] = useState<string>('150000'); // Default 1.5 Lakhs
+  const [budgetInput, setBudgetInput] = useState<string>('150000');
   const [month, setMonth] = useState<string>('Dec');
   const [showAll, setShowAll] = useState<boolean>(false);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
@@ -39,58 +43,38 @@ export default function OnboardingSidebar({ onSelectDestination, onOriginSet, or
   const budget = parseFloat(budgetInput) || 0;
   const destinationsList = getAllDestinations();
 
-  // Find origin city details dynamically
   const originCity = useMemo(() => {
     return INDIA_CITIES.find((c) => c.iata === originIata) || INDIA_CITIES[0];
   }, [originIata]);
 
-  // Calculate dynamic recommendations based on input parameters (Days, Month, Origin Airport)
   const recommendations = useMemo(() => {
     return COUNTRIES_DATA.map((c) => {
-      // Find the first city coordinate of the destination country to calculate flight distance
       const firstCityId = c.cityIds[0];
       const destCity = destinationsList.find((d) => d.id === firstCityId);
-      
-      let flightCost = c.baseFlightCost; // fallback
+
+      let flightCost = c.baseFlightCost;
       if (destCity && originCity) {
-        const distance = getDistance(
-          originCity.coords.lat,
-          originCity.coords.lng,
-          destCity.coords.lat,
-          destCity.coords.lng
-        );
-        // Dynamic estimate: 6.5 INR per km + 8000 base airport taxes/duties
+        const distance = getDistance(originCity.coords.lat, originCity.coords.lng, destCity.coords.lat, destCity.coords.lng);
         flightCost = Math.round(distance * 6.5 + 8000);
       }
 
       const estimatedCost = flightCost + c.dailyCost * days;
       const isIdeal = c.bestMonths.includes(month);
 
-      return {
-        ...c,
-        flightCost,
-        estimatedCost,
-        isIdeal,
-      };
+      return { ...c, flightCost, estimatedCost, isIdeal };
     }).sort((a, b) => {
-      // Prioritize Ideal Month destinations at the top
       if (a.isIdeal && !b.isIdeal) return -1;
       if (!a.isIdeal && b.isIdeal) return 1;
-      // Secondary sorting: cheapest estimated cost first
       return a.estimatedCost - b.estimatedCost;
     });
   }, [days, month, originCity, destinationsList]);
 
-  // Filter recommendations based on budget threshold
   const { fitting, exceeding } = useMemo(() => {
     const fit: typeof recommendations = [];
     const exc: typeof recommendations = [];
     recommendations.forEach((r) => {
-      if (r.estimatedCost <= budget) {
-        fit.push(r);
-      } else {
-        exc.push(r);
-      }
+      if (r.estimatedCost <= budget) fit.push(r);
+      else exc.push(r);
     });
     return { fitting: fit, exceeding: exc };
   }, [recommendations, budget]);
@@ -107,84 +91,67 @@ export default function OnboardingSidebar({ onSelectDestination, onOriginSet, or
       .filter((d): d is Destination => d !== undefined);
   };
 
-  const formatCurrency = (val: number) => {
-    return `₹${val.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-  };
+  const formatCurrency = (val: number) => `₹${val.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
   return (
-    <div className="absolute left-6 top-6 bottom-6 w-[400px] z-20 bg-secondary-bg border border-border-color rounded-2xl flex flex-col overflow-hidden shadow-2xl">
-      {/* Sidebar Header */}
-      <div className="p-5 border-b border-border-color flex-shrink-0">
-        <h1 className="text-xl font-black text-primary-text flex items-center gap-1">
-          journey<span className="text-accent-color">er</span>
+    <div className="absolute left-6 top-6 bottom-6 w-[400px] z-20 backdrop-blur-md bg-background/90 border border-border/60 rounded-2xl flex flex-col overflow-hidden shadow-xl">
+      {/* Header */}
+      <div className="p-5 border-b border-border/40 flex-shrink-0">
+        <h1 className="text-xl font-black tracking-tight text-foreground flex items-center gap-1">
+          journey<span className="text-primary">er</span>
         </h1>
-        <p className="text-secondary-text text-[11px] mt-1">Set your trip constraints to find matching countries</p>
+        <p className="text-muted-foreground text-[11px] mt-1">Set your trip constraints to find matching countries</p>
       </div>
 
       {/* Scrollable Form + Recommendations */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin">
-        
-        {/* Form Fields (Opaque variables to avoid Tailwind opacity evaluation on hex colors) */}
-        <div className="space-y-4 bg-card-bg border border-border-color p-4 rounded-xl">
-          
-          {/* Departing From Dropdown */}
-          <div className="space-y-1 relative">
-            <p className="text-[10px] text-secondary-text uppercase tracking-widest font-bold">
-              Departing From
-            </p>
+      <div className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-thin">
+
+        {/* Form Card */}
+        <div className="space-y-4 bg-muted/30 border border-border/40 p-4 rounded-xl">
+
+          {/* Departing From */}
+          <div className="space-y-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Departing From</p>
             <LocationInput onOriginSet={onOriginSet} currentIata={originIata} inline={true} />
           </div>
 
           {/* Days Selector */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] text-secondary-text uppercase tracking-widest font-bold">
-                Trip Duration
-              </label>
-              <span className="text-xs text-accent-color font-bold">{days} Days</span>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Trip Duration</label>
+              <span className="text-xs text-primary font-bold">{days} Days</span>
             </div>
-            <div className="flex items-center gap-3 bg-secondary-bg border border-border-color rounded-xl px-3 py-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setDays(Math.max(3, days - 1))}
-                className="w-6 h-6 rounded bg-card-bg border border-border-color hover:bg-accent-color hover:text-white flex items-center justify-center font-bold text-secondary-text transition-colors"
-              >
-                -
-              </button>
+            <div className="flex items-center gap-3 bg-background/60 border border-border/40 rounded-lg px-3 py-2 text-xs">
+              <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDays(Math.max(3, days - 1))}>
+                <span className="font-bold text-sm">-</span>
+              </Button>
               <input
                 type="range"
                 min="3"
                 max="30"
                 value={days}
                 onChange={(e) => setDays(parseInt(e.target.value))}
-                className="flex-1 accent-accent-color bg-primary-bg h-1 rounded-lg appearance-none cursor-pointer"
+                className="flex-1 accent-blue-500 h-1 rounded-lg appearance-none cursor-pointer bg-muted"
               />
-              <button
-                type="button"
-                onClick={() => setDays(Math.min(30, days + 1))}
-                className="w-6 h-6 rounded bg-card-bg border border-border-color hover:bg-accent-color hover:text-white flex items-center justify-center font-bold text-secondary-text transition-colors"
-              >
-                +
-              </button>
+              <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDays(Math.min(30, days + 1))}>
+                <span className="font-bold text-sm">+</span>
+              </Button>
             </div>
           </div>
 
-          {/* Budget Input & Presets */}
+          {/* Budget */}
           <div className="space-y-2">
-            <label className="text-[10px] text-secondary-text uppercase tracking-widest font-bold">
-              Budget / Person (INR)
-            </label>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Budget / Person (INR)</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-text font-semibold text-xs">₹</span>
-              <input
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-xs">₹</span>
+              <Input
                 type="number"
                 value={budgetInput}
                 onChange={(e) => setBudgetInput(e.target.value)}
-                className="w-full bg-secondary-bg border border-border-color rounded-xl pl-6 pr-3 py-2 text-primary-text placeholder-secondary-text text-xs focus:outline-none focus:border-accent-color/50 transition-all font-semibold"
+                className="pl-6 h-9 text-xs font-semibold bg-background/60"
                 placeholder="Enter budget..."
               />
             </div>
-            {/* Presets */}
             <div className="grid grid-cols-4 gap-1.5">
               {[
                 { label: '50k', val: 50000 },
@@ -192,67 +159,54 @@ export default function OnboardingSidebar({ onSelectDestination, onOriginSet, or
                 { label: '2L', val: 200000 },
                 { label: '5L', val: 500000 },
               ].map((preset) => (
-                <button
+                <Button
                   key={preset.label}
+                  variant={budget === preset.val ? 'default' : 'outline'}
+                  size="xs"
+                  className="h-7 text-[10px] font-bold"
                   onClick={() => setBudgetInput(String(preset.val))}
-                  className={`py-1.5 text-[10px] rounded-lg font-bold transition-all border ${
-                    budget === preset.val
-                      ? 'bg-accent-color border-accent-color text-white shadow-lg'
-                      : 'bg-card-bg border-border-color text-secondary-text hover:bg-secondary-bg hover:text-primary-text'
-                  }`}
                 >
                   {preset.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
 
-          {/* Month Dropdown */}
+          {/* Month */}
           <div className="space-y-1.5">
-            <label className="text-[10px] text-secondary-text uppercase tracking-widest font-bold">
-              Approximate Month
-            </label>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Approximate Month</label>
             <div className="relative">
               <select
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
-                className="w-full bg-secondary-bg border border-border-color rounded-xl px-3 py-2 text-primary-text text-xs focus:outline-none focus:border-accent-color/50 appearance-none font-medium cursor-pointer"
+                className="w-full bg-background/60 border border-input rounded-md px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring appearance-none cursor-pointer font-medium"
               >
                 {MONTHS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
+                  <option key={m} value={m}>{m}</option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-secondary-text">
-                <svg className="fill-current h-3.5 w-3.5" viewBox="0 0 20 20">
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
-              </div>
+              <ChevronDown className="pointer-events-none absolute inset-y-0 right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             </div>
           </div>
-
         </div>
 
-        {/* Recommended List */}
-        <div className="space-y-3.5">
-          <div className="flex items-center justify-between border-b border-border-color pb-2">
-            <h2 className="text-xs font-bold text-primary-text uppercase tracking-wider">Recommended Countries</h2>
+        {/* Recommendations */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Recommended Countries</h2>
             {exceeding.length > 0 && (
-              <button
-                onClick={() => setShowAll(!showAll)}
-                className="text-[9px] font-bold text-accent-color hover:text-accent-color/80 transition-colors bg-accent-color/10 border border-accent-color/20 px-2 py-0.5 rounded"
-              >
+              <Button variant="outline" size="xs" className="h-6 text-[9px] font-bold" onClick={() => setShowAll(!showAll)}>
                 {showAll ? 'Hide Over-Budget' : `Show All (+${exceeding.length})`}
-              </button>
+              </Button>
             )}
           </div>
+          <Separator />
 
           {activeList.length === 0 ? (
-            <div className="text-center py-8 bg-card-bg border border-border-color rounded-xl px-4">
-              <p className="text-secondary-text text-xs font-semibold">No countries fit this budget</p>
-              <p className="text-secondary-text/80 text-[10px] mt-1">
-                Try increasing budget or reducing travel days, or click "Show All" above.
+            <div className="text-center py-8 bg-muted/30 border border-border/40 rounded-xl px-4">
+              <p className="text-muted-foreground text-xs font-semibold">No countries fit this budget</p>
+              <p className="text-muted-foreground/70 text-[10px] mt-1">
+                Try increasing budget or reducing travel days.
               </p>
             </div>
           ) : (
@@ -265,58 +219,55 @@ export default function OnboardingSidebar({ onSelectDestination, onOriginSet, or
                 return (
                   <div
                     key={c.name}
-                    className={`bg-card-bg border rounded-xl transition-all overflow-hidden ${
+                    className={`border rounded-xl transition-all duration-200 overflow-hidden ${
                       isSelected
-                        ? 'border-accent-color bg-secondary-bg'
+                        ? 'border-primary bg-primary/5'
                         : isOverBudget
-                        ? 'border-border-color/30 opacity-50'
-                        : 'border-border-color'
+                        ? 'border-border/30 opacity-50'
+                        : 'border-border/60 hover:-translate-y-0.5 hover:shadow-sm'
                     }`}
                   >
-                    {/* Country Header Details */}
+                    {/* Country Header */}
                     <div
                       onClick={() => handleCountrySelect(c.name)}
                       className="p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none text-xs"
                     >
                       <div className="space-y-0.5 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="text-primary-text font-bold truncate">{c.name}</h3>
-                          <span className="text-[9px] text-secondary-text font-medium px-1.5 py-0.2 bg-secondary-bg border border-border-color rounded-full">
-                            {c.region}
-                          </span>
+                          <h3 className="text-foreground font-bold truncate">{c.name}</h3>
+                          <Badge variant="outline" className="text-[9px] h-4 px-1.5">{c.region}</Badge>
                           {c.isIdeal && (
-                            <span className="text-[8px] font-bold text-green-500 bg-green-500/10 border border-green-500/20 px-1.5 py-0.2 rounded-full">
-                              ☀️ Ideal Month
-                            </span>
+                            <Badge variant="success" className="text-[8px] h-4 px-1.5">☀️ Ideal Month</Badge>
                           )}
                         </div>
-                        <p className="text-secondary-text text-[10px] leading-relaxed truncate">{c.reason}</p>
+                        <p className="text-muted-foreground text-[10px] leading-relaxed truncate">{c.reason}</p>
                       </div>
-
                       <div className="text-right flex-shrink-0">
-                        <div className={`font-extrabold ${isOverBudget ? 'text-orange-500' : 'text-accent-color'}`}>
+                        <div className={`font-extrabold text-sm ${isOverBudget ? 'text-orange-500' : 'text-primary'}`}>
                           {formatCurrency(c.estimatedCost)}
                         </div>
-                        <div className="text-secondary-text text-[9px]">Est. Cost</div>
+                        <div className="text-muted-foreground text-[9px]">Est. Cost</div>
                       </div>
                     </div>
 
-                    {/* Available Cities Selection */}
+                    {/* City Selection */}
                     {isSelected && (
-                      <div className="px-3.5 pb-3.5 pt-1 border-t border-border-color/20 bg-primary-bg">
-                        <p className="text-[9px] text-secondary-text font-semibold uppercase tracking-wider mb-2">
+                      <div className="px-3.5 pb-3.5 pt-1 border-t border-border/20 bg-background/40">
+                        <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">
                           Select a city to fly to:
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {cities.map((city) => (
-                            <button
+                            <Button
                               key={city.id}
+                              variant="outline"
+                              size="xs"
+                              className="h-7 text-[11px] font-bold"
                               onClick={() => onSelectDestination(city, { days, month })}
-                              className="px-2.5 py-1.5 bg-card-bg hover:bg-accent-color hover:text-white border border-border-color rounded-lg text-[11px] font-bold transition-all flex items-center gap-1"
                             >
-                              <span>📍</span>
+                              <MapPin className="h-3 w-3" />
                               {city.city}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </div>
@@ -327,7 +278,6 @@ export default function OnboardingSidebar({ onSelectDestination, onOriginSet, or
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
